@@ -2,6 +2,16 @@
 
     <uses-permission android:name="android.permission.INTERNET" />
 
+    <!-- Permission to write to external storage (for Android below API level 29) -->
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" 
+        android:maxSdkVersion="28" />
+    
+    <!-- For Android 10 and above, manage external storage (requires special handling in code) -->
+    <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE" />
+
+    <!-- Permission to read from external storage -->
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+
     <application
       android:name=".MainApplication"
       android:label="@string/app_name"
