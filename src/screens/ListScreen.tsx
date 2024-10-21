@@ -1,5 +1,7 @@
 import React, { useState, useRef } from 'react';
-import { View, TextInput, Button, FlatList, Text, StyleSheet, TouchableOpacity, Modal, ScrollView } from 'react-native';
+import { View, TextInput, Button, FlatList, Text, StyleSheet, TouchableOpacity, Modal, ScrollView, Image } from 'react-native';
+import Svg, { Path } from 'react-native-svg';
+import myImg from '../icons/delete.png';
 
 interface Item {
   id: string;
@@ -94,24 +96,52 @@ const ListScreen = () => {
       {/* Top bar for "Add New List" button */}
       <View style={styles.topBar}>
         <TouchableOpacity style={styles.addButton} onPress={() => setIsModalVisible(true)}>
-          <Text style={styles.addButtonText}>Add New List</Text>
+          <Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <Path d="M12 5v14M5 12h14" />
+          </Svg>
+          <Text style={styles.addButtonText}> Create List</Text>
         </TouchableOpacity>
+      </View>
+      <View style={styles.titleContainer}>
+          <Text style={styles.title}>Your lists</Text>
       </View>
 
       {/* Horizontal list of available lists */}
       <View style={styles.listSelectorContainer}>
         <ScrollView horizontal contentContainerStyle={styles.listSelectorContent}>
           {lists.map((list) => (
-            <TouchableOpacity key={list.id} onPress={() => setSelectedListId(list.id)} style={styles.listButton}>
+            <TouchableOpacity key={list.id} onPress={() => setSelectedListId(list.id)} style={[
+              styles.listButton,
+              selectedListId === list.id && styles.selectedListButton // Apply selected style if this is the selected list
+            ]}>
               <Text style={styles.listButtonText}>{list.name}</Text>
             </TouchableOpacity>
           ))}
         </ScrollView>
       </View>
 
+
       {/* Input and item list for the selected list */}
       {selectedListId && (
         <>
+        <View style={styles.listTitleContainer}>
+      <Text style={styles.listTitle}>
+        {lists.find((list) => list.id === selectedListId)?.name}
+      </Text>
+
+      {/* Custom button with an image */}
+      <TouchableOpacity
+        
+        onPress={() => {
+          setLists(lists.filter((list) => list.id !== selectedListId));
+          setSelectedListId(null);
+        }}
+        style={styles.deleteButton}
+      >
+        <Image source={myImg} style={styles.icon}/>
+        <Text>Delete list</Text>
+      </TouchableOpacity>
+    </View>
           <TextInput
             ref={inputRef} // Attach the ref to the input field
             style={styles.input}
@@ -142,22 +172,44 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   topBar: {
-    height: 50, // Height of the top bar
-    justifyContent: 'center',
+    height: 50,
+    justifyContent: 'flex-end', // Align to the right
     alignItems: 'center',
+    flexDirection: 'row', // Arrange items in a row
     backgroundColor: '#f5f5f5',
-    marginBottom: 10, // Add some space below the top bar
+    paddingHorizontal: 10, // Add padding to the sides
+    marginBottom: 10,
   },
   addButton: {
     backgroundColor: '#14213d', // Button background color
     paddingVertical: 10, // Vertical padding for the button
     paddingHorizontal: 20, // Horizontal padding for the button
     borderRadius: 5, // Rounded corners
+    flexDirection: 'row', // Arrange items in a row
   },
   addButtonText: {
     color: '#fff', // Button text color
     fontSize: 16, // Button text size
     fontWeight: 'bold', // Make the text bold
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#14213d',
+  },
+  titleContainer: {
+    marginBottom: 8,
+  },
+  listTitle: {
+    fontSize: 30,
+    fontWeight: 'bold',
+    color: '#14213d',
+  },
+  listTitleContainer: {
+    marginBottom: 8,
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    flexDirection: 'row',
   },
   input: {
     height: 40,
@@ -180,24 +232,29 @@ const styles = StyleSheet.create({
     color: 'gray',
   },
   listSelectorContainer: {
-    height: 40, // Set the height for the horizontal list container to 100px
-    marginBottom: 16,
+    marginBottom: 12,
+    borderBottomColor: '#14213d',
+    borderBottomWidth: 2,
+    paddingBottom: 8,
   },
   listSelectorContent: {
     alignItems: 'center', // Center content vertically
   },
   listButton: {
-    padding: 10,
+    paddingHorizontal: 30,
+    paddingVertical: 20,
     backgroundColor: '#fca311',
-    marginHorizontal: 5,
-    borderRadius: 5,
-    justifyContent: 'center',
-    height: 80, // Ensure the button height fits within the container height
-    minWidth: 80, // Set a minimum width for the buttons
+    borderRadius: 10,
+   marginRight: 5,
+  },
+  selectedListButton: {
+    borderColor: '#14213d', // Border color when the list is selected
+    borderWidth: 2, // Border width when the list is selected
   },
   listButtonText: {
     fontSize: 16,
     textAlign: 'center',
+    color: '#fff',
   },
   modalContainer: {
     flex: 1,
@@ -211,6 +268,16 @@ const styles = StyleSheet.create({
     backgroundColor: 'white',
     borderRadius: 10,
     elevation: 5,
+  },
+  icon: {
+    width: 40,
+    height: 40,
+    color: 'red',
+    marginBottom: -7,
+  },
+  deleteButton: {
+    flexDirection: 'column',
+    alignItems: 'center',
   },
 });
 
