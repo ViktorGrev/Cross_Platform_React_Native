@@ -10,6 +10,7 @@
     "test": "jest"
   },
   "dependencies": {
+    "expo-file-system": "~17.0.1",
     "react": "18.3.1",
     "react-native": "0.75.4",
     "react-native-draggable-flatlist": "^4.0.1",

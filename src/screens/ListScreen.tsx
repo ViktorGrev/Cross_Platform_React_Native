@@ -1,7 +1,8 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { View, TextInput, Button, FlatList, Text, StyleSheet, TouchableOpacity, Modal, ScrollView, Image } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import myImg from '../icons/delete.png';
+import RNFS from 'react-native-fs';
 
 interface Item {
   id: string;
@@ -21,7 +22,35 @@ const ListScreen = () => {
   const [inputValue, setInputValue] = useState<string>('');
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [newListName, setNewListName] = useState('');
-  const inputRef = useRef<TextInput>(null); // Reference to the input field
+  const inputRef = useRef<TextInput>(null);
+
+  const listsFilename = `${RNFS.DownloadDirectoryPath}/lists.json`;
+
+  useEffect(() => {
+    // Load lists from JSON file on initialization
+    const loadLists = async () => {
+      try {
+        const listsJson = await RNFS.readFile(listsFilename);
+        const savedLists = JSON.parse(listsJson);
+        setLists(savedLists);
+      } catch (error) {
+        console.log('No lists found, starting with an empty list.');
+      }
+    };
+    loadLists();
+  }, []);
+
+  useEffect(() => {
+    // Save lists to JSON file each time they change
+    const saveLists = async () => {
+      try {
+        await RNFS.writeFile(listsFilename, JSON.stringify(lists), 'utf8');
+      } catch (error) {
+        console.log('Error saving lists:', error);
+      }
+    };
+    saveLists();
+  }, [lists]);
 
   const addItem = () => {
     if (inputValue.trim() && selectedListId) {
@@ -29,25 +58,23 @@ const ListScreen = () => {
         list.id === selectedListId
           ? {
               ...list,
-              items: [{ id: Date.now().toString(), text: inputValue, completed: false }, ...list.items], // Add new item at the beginning
+              items: [{ id: Date.now().toString(), text: inputValue, completed: false }, ...list.items],
             }
           : list
       );
       setLists(updatedLists);
-      setInputValue(''); // Clear the input field
-      inputRef.current?.focus(); // Keep the input field focused
+      setInputValue('');
+      inputRef.current?.focus();
     }
   };
 
   const toggleItemCompletion = (listId: string, itemId: string) => {
     const updatedLists = lists.map((list) => {
       if (list.id === listId) {
-        // Toggle the completion status of the item
         const updatedItems = list.items.map((item) =>
           item.id === itemId ? { ...item, completed: !item.completed } : item
         );
 
-        // Sort items: incomplete at the top, completed at the bottom
         const incompleteItems = updatedItems.filter((item) => !item.completed);
         const completedItems = updatedItems.filter((item) => item.completed);
         return { ...list, items: [...incompleteItems, ...completedItems] };
@@ -57,27 +84,23 @@ const ListScreen = () => {
     setLists(updatedLists);
   };
 
-  const renderItem = ({ item }: { item: Item }) => (
-    <TouchableOpacity onPress={() => toggleItemCompletion(selectedListId!, item.id)}>
-      <View style={styles.item}>
-        <Text style={item.completed ? styles.completedText : styles.text}>{item.text}</Text>
-      </View>
-    </TouchableOpacity>
-  );
-
   const createNewList = () => {
     if (newListName.trim()) {
       const newList: List = { id: Date.now().toString(), name: newListName, items: [] };
       setLists([...lists, newList]);
       setNewListName('');
-      setIsModalVisible(false); // Close the modal
-      setSelectedListId(newList.id); // Automatically select the new list
+      setIsModalVisible(false);
+      setSelectedListId(newList.id);
     }
+  };
+
+  const deleteList = (listId: string) => {
+    setLists(lists.filter((list) => list.id !== listId));
+    setSelectedListId(null);
   };
 
   return (
     <View style={styles.container}>
-      {/* Modal for creating a new list */}
       <Modal visible={isModalVisible} transparent={true} animationType="slide">
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
@@ -93,75 +116,74 @@ const ListScreen = () => {
         </View>
       </Modal>
 
-      {/* Top bar for "Add New List" button */}
       <View style={styles.topBar}>
         <TouchableOpacity style={styles.addButton} onPress={() => setIsModalVisible(true)}>
           <Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <Path d="M12 5v14M5 12h14" />
           </Svg>
-          <Text style={styles.addButtonText}> Create List</Text>
+          <Text style={styles.addButtonText}>Create List</Text>
         </TouchableOpacity>
       </View>
       <View style={styles.titleContainer}>
-          <Text style={styles.title}>Your lists</Text>
+        <Text style={styles.title}>Your lists</Text>
       </View>
 
-      {/* Horizontal list of available lists */}
       <View style={styles.listSelectorContainer}>
         <ScrollView horizontal contentContainerStyle={styles.listSelectorContent}>
           {lists.map((list) => (
-            <TouchableOpacity key={list.id} onPress={() => setSelectedListId(list.id)} style={[
-              styles.listButton,
-              selectedListId === list.id && styles.selectedListButton // Apply selected style if this is the selected list
-            ]}>
+            <TouchableOpacity
+              key={list.id}
+              onPress={() => setSelectedListId(list.id)}
+              style={[styles.listButton, selectedListId === list.id && styles.selectedListButton]}>
               <Text style={styles.listButtonText}>{list.name}</Text>
             </TouchableOpacity>
           ))}
         </ScrollView>
       </View>
 
-
-      {/* Input and item list for the selected list */}
       {selectedListId && (
-        <>
-        <View style={styles.listTitleContainer}>
+  <>
+    <View style={styles.listTitleContainer}>
       <Text style={styles.listTitle}>
         {lists.find((list) => list.id === selectedListId)?.name}
       </Text>
-
-      {/* Custom button with an image */}
+      
+      {/* Delete button for the selected list */}
       <TouchableOpacity
-        
-        onPress={() => {
-          setLists(lists.filter((list) => list.id !== selectedListId));
-          setSelectedListId(null);
-        }}
+        onPress={() => deleteList(selectedListId)}
         style={styles.deleteButton}
       >
         <Image source={myImg} style={styles.icon}/>
         <Text>Delete list</Text>
       </TouchableOpacity>
     </View>
-          <TextInput
-            ref={inputRef} // Attach the ref to the input field
-            style={styles.input}
-            placeholder="Add an item"
-            value={inputValue}
-            onChangeText={setInputValue}
-            onSubmitEditing={() => {
-              addItem();
-              inputRef.current?.focus(); // Refocus the input field after submitting
-            }}
-            blurOnSubmit={false} // Prevent the keyboard from dismissing
-          />
-          <Button title="Add Item" onPress={addItem} />
-          <FlatList
-            data={lists.find((list) => list.id === selectedListId)?.items || []}
-            renderItem={renderItem}
-            keyExtractor={(item) => item.id}
-          />
-        </>
+
+    <TextInput
+      ref={inputRef}
+      style={styles.input}
+      placeholder="Add an item"
+      value={inputValue}
+      onChangeText={setInputValue}
+      onSubmitEditing={() => {
+        addItem();
+        inputRef.current?.focus();
+      }}
+      blurOnSubmit={false}
+    />
+    <Button title="Add Item" onPress={addItem} />
+    <FlatList
+      data={lists.find((list) => list.id === selectedListId)?.items || []}
+      renderItem={({ item }) => (
+        <TouchableOpacity onPress={() => toggleItemCompletion(selectedListId, item.id)}>
+          <View style={styles.item}>
+            <Text style={item.completed ? styles.completedText : styles.text}>{item.text}</Text>
+          </View>
+        </TouchableOpacity>
       )}
+      keyExtractor={(item) => item.id}
+    />
+  </>
+)}
     </View>
   );
 };
@@ -170,27 +192,28 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 16,
+    backgroundColor: '#f5f5f5',
   },
   topBar: {
     height: 50,
-    justifyContent: 'flex-end', // Align to the right
+    justifyContent: 'flex-end',
     alignItems: 'center',
-    flexDirection: 'row', // Arrange items in a row
+    flexDirection: 'row',
     backgroundColor: '#f5f5f5',
-    paddingHorizontal: 10, // Add padding to the sides
+    paddingHorizontal: 10,
     marginBottom: 10,
   },
   addButton: {
-    backgroundColor: '#14213d', // Button background color
-    paddingVertical: 10, // Vertical padding for the button
-    paddingHorizontal: 20, // Horizontal padding for the button
-    borderRadius: 5, // Rounded corners
-    flexDirection: 'row', // Arrange items in a row
+    backgroundColor: '#14213d',
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 5,
+    flexDirection: 'row',
   },
   addButtonText: {
-    color: '#fff', // Button text color
-    fontSize: 16, // Button text size
-    fontWeight: 'bold', // Make the text bold
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
   },
   title: {
     fontSize: 24,
@@ -201,15 +224,15 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   listTitle: {
-    fontSize: 30,
+    fontSize: 20,
     fontWeight: 'bold',
     color: '#14213d',
   },
   listTitleContainer: {
-    marginBottom: 8,
-    alignItems: 'center',
-    justifyContent: 'space-between',
     flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
   },
   input: {
     height: 40,
@@ -238,18 +261,18 @@ const styles = StyleSheet.create({
     paddingBottom: 8,
   },
   listSelectorContent: {
-    alignItems: 'center', // Center content vertically
+    alignItems: 'center',
   },
   listButton: {
     paddingHorizontal: 30,
     paddingVertical: 20,
     backgroundColor: '#fca311',
     borderRadius: 10,
-   marginRight: 5,
+    marginRight: 5,
   },
   selectedListButton: {
-    borderColor: '#14213d', // Border color when the list is selected
-    borderWidth: 2, // Border width when the list is selected
+    borderColor: '#14213d',
+    borderWidth: 2,
   },
   listButtonText: {
     fontSize: 16,
@@ -270,15 +293,15 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   icon: {
-    width: 40,
-    height: 40,
-    color: 'red',
-    marginBottom: -7,
+    width: 20,
+    height: 20,
+    marginRight: 5,
   },
   deleteButton: {
-    flexDirection: 'column',
+    flexDirection: 'row',
     alignItems: 'center',
   },
 });
+
 
 export default ListScreen;
