@@ -57,9 +57,9 @@ const ListScreen = () => {
       const updatedLists = lists.map((list) =>
         list.id === selectedListId
           ? {
-              ...list,
-              items: [{ id: Date.now().toString(), text: inputValue, completed: false }, ...list.items],
-            }
+            ...list,
+            items: [{ id: Date.now().toString(), text: inputValue, completed: false }, ...list.items],
+          }
           : list
       );
       setLists(updatedLists);
@@ -104,14 +104,24 @@ const ListScreen = () => {
       <Modal visible={isModalVisible} transparent={true} animationType="slide">
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
+            <Text style={styles.title}>Title</Text>
             <TextInput
               style={styles.input}
               placeholder="Enter list name"
               value={newListName}
               onChangeText={setNewListName}
             />
-            <Button title="Create List" onPress={createNewList} />
-            <Button title="Cancel" onPress={() => setIsModalVisible(false)} />
+            <View style={styles.buttonContainer}>
+              <TouchableOpacity
+                style={styles.cancelButton}
+                onPress={() => setIsModalVisible(false)}
+              >
+                <Text style={styles.buttonText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.createButton} onPress={createNewList}>
+                <Text style={styles.buttonText}>Create List</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
       </Modal>
@@ -142,48 +152,48 @@ const ListScreen = () => {
       </View>
 
       {selectedListId && (
-  <>
-    <View style={styles.listTitleContainer}>
-      <Text style={styles.listTitle}>
-        {lists.find((list) => list.id === selectedListId)?.name}
-      </Text>
-      
-      {/* Delete button for the selected list */}
-      <TouchableOpacity
-        onPress={() => deleteList(selectedListId)}
-        style={styles.deleteButton}
-      >
-        <Image source={myImg} style={styles.icon}/>
-        <Text>Delete list</Text>
-      </TouchableOpacity>
-    </View>
+        <>
+          <View style={styles.listTitleContainer}>
+            <Text style={styles.listTitle}>
+              {lists.find((list) => list.id === selectedListId)?.name}
+            </Text>
 
-    <TextInput
-      ref={inputRef}
-      style={styles.input}
-      placeholder="Add an item"
-      value={inputValue}
-      onChangeText={setInputValue}
-      onSubmitEditing={() => {
-        addItem();
-        inputRef.current?.focus();
-      }}
-      blurOnSubmit={false}
-    />
-    <Button title="Add Item" onPress={addItem} />
-    <FlatList
-      data={lists.find((list) => list.id === selectedListId)?.items || []}
-      renderItem={({ item }) => (
-        <TouchableOpacity onPress={() => toggleItemCompletion(selectedListId, item.id)}>
-          <View style={styles.item}>
-            <Text style={item.completed ? styles.completedText : styles.text}>{item.text}</Text>
+            {/* Delete button for the selected list */}
+            <TouchableOpacity
+              onPress={() => deleteList(selectedListId)}
+              style={styles.deleteButton}
+            >
+              <Image source={myImg} style={styles.icon} />
+              <Text>Delete list</Text>
+            </TouchableOpacity>
           </View>
-        </TouchableOpacity>
+          
+          <TextInput
+            ref={inputRef}
+            style={styles.input}
+            placeholder="Add an item"
+            value={inputValue}
+            onChangeText={setInputValue}
+            onSubmitEditing={() => {
+              addItem();
+              inputRef.current?.focus();
+            }}
+            blurOnSubmit={false}
+          />
+          <Button title="Add Item" onPress={addItem} />
+          <FlatList
+            data={lists.find((list) => list.id === selectedListId)?.items || []}
+            renderItem={({ item }) => (
+              <TouchableOpacity onPress={() => toggleItemCompletion(selectedListId, item.id)}>
+                <View style={styles.item}>
+                  <Text style={item.completed ? styles.completedText : styles.text}>{item.text}</Text>
+                </View>
+              </TouchableOpacity>
+            )}
+            keyExtractor={(item) => item.id}
+          />
+        </>
       )}
-      keyExtractor={(item) => item.id}
-    />
-  </>
-)}
     </View>
   );
 };
@@ -300,6 +310,28 @@ const styles = StyleSheet.create({
   deleteButton: {
     flexDirection: 'row',
     alignItems: 'center',
+  },
+
+  buttonContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+  },
+  createButton: {
+    backgroundColor: '#4CAF50',
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 5,
+  },
+  cancelButton: {
+    backgroundColor: '#f44336',
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 5,
+  },
+  buttonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
   },
 });
 
