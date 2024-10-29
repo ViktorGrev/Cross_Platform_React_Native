@@ -7,7 +7,6 @@ import ListDetails from '../components/ListDetails';
 import ModalComponent from '../components/ModalComponent';
 import ListTitle from '../components/ListTitle';
 
-
 interface Item {
   id: string;
   text: string;
@@ -26,30 +25,43 @@ const ListScreen = () => {
   const [inputValue, setInputValue] = useState<string>('');
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [newListName, setNewListName] = useState('');
-  const listsFilename = `${RNFS.DownloadDirectoryPath}/lists.json`;
+  const listsDirectory = `${RNFS.DownloadDirectoryPath}/lists`;
 
   useEffect(() => {
+    // Ensure lists directory exists
+    const ensureDirectory = async () => {
+      const exists = await RNFS.exists(listsDirectory);
+      if (!exists) await RNFS.mkdir(listsDirectory);
+    };
+    ensureDirectory();
+
+    // Load all lists from files in the directory
     const loadLists = async () => {
       try {
-        const listsJson = await RNFS.readFile(listsFilename);
-        setLists(JSON.parse(listsJson));
-      } catch {
-        console.log('No lists found, starting with an empty list.');
+        const files = await RNFS.readDir(listsDirectory);
+        const loadedLists: List[] = [];
+        for (const file of files) {
+          if (file.isFile()) {
+            const listJson = await RNFS.readFile(file.path);
+            loadedLists.push(JSON.parse(listJson));
+          }
+        }
+        setLists(loadedLists);
+      } catch (error) {
+        console.log('Error loading lists:', error);
       }
     };
     loadLists();
   }, []);
 
-  useEffect(() => {
-    const saveLists = async () => {
-      try {
-        await RNFS.writeFile(listsFilename, JSON.stringify(lists), 'utf8');
-      } catch (error) {
-        console.log('Error saving lists:', error);
-      }
-    };
-    saveLists();
-  }, [lists]);
+  const saveList = async (list: List) => {
+    try {
+      const listPath = `${listsDirectory}/${list.id}.json`;
+      await RNFS.writeFile(listPath, JSON.stringify(list), 'utf8');
+    } catch (error) {
+      console.log('Error saving list:', error);
+    }
+  };
 
   const createNewList = () => {
     if (newListName.trim()) {
@@ -58,12 +70,19 @@ const ListScreen = () => {
       setNewListName('');
       setIsModalVisible(false);
       setSelectedListId(newList.id);
+      saveList(newList);
     }
   };
 
-  const deleteList = (listId: string) => {
-    setLists(lists.filter((list) => list.id !== listId));
-    setSelectedListId(null);
+  const deleteList = async (listId: string) => {
+    try {
+      const listPath = `${listsDirectory}/${listId}.json`;
+      await RNFS.unlink(listPath);
+      setLists(lists.filter((list) => list.id !== listId));
+      setSelectedListId(null);
+    } catch (error) {
+      console.log('Error deleting list:', error);
+    }
   };
 
   return (
@@ -86,7 +105,11 @@ const ListScreen = () => {
           <ListDetails
             selectedListId={selectedListId}
             lists={lists}
-            setLists={setLists}
+            setLists={(updatedLists) => {
+              setLists(updatedLists);
+              const updatedList = updatedLists.find((list) => list.id === selectedListId);
+              if (updatedList) saveList(updatedList);
+            }}
             inputValue={inputValue}
             setInputValue={setInputValue}
           />
