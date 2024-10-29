@@ -2,7 +2,15 @@ import React, { useRef } from 'react';
 import { View, TextInput, FlatList, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 
-const ListDetails = ({ selectedListId, lists, setLists, inputValue, setInputValue }) => {
+interface ListDetailsProps {
+  selectedListId: string;
+  lists: { id: string; items: { id: string; text: string; completed: boolean }[] }[];
+  setLists: React.Dispatch<React.SetStateAction<{ id: string; items: { id: string; text: string; completed: boolean }[] }[]>>;
+  inputValue: string;
+  setInputValue: React.Dispatch<React.SetStateAction<string>>;
+}
+
+const ListDetails: React.FC<ListDetailsProps> = ({ selectedListId, lists, setLists, inputValue, setInputValue }) => {
   const inputRef = useRef<TextInput>(null);
 
   const addItem = () => {

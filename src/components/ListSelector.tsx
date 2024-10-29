@@ -1,7 +1,18 @@
 import React from 'react';
 import { View, ScrollView, TouchableOpacity, Text, StyleSheet } from 'react-native';
 
-const ListSelector = ({ lists, selectedListId, onSelectList }) => (
+interface List {
+    id: string;
+    name: string;
+}
+
+interface ListSelectorProps {
+    lists: List[];
+    selectedListId: string;
+    onSelectList: (id: string) => void;
+}
+
+const ListSelector: React.FC<ListSelectorProps> = ({ lists, selectedListId, onSelectList }) => (
     <View style={styles.listSelectorContainer}>
         <Text style={styles.title}>Your lists</Text>
         <ScrollView horizontal contentContainerStyle={styles.listSelectorContent}>

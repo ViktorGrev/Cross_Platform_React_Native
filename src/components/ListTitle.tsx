@@ -2,7 +2,12 @@ import React from 'react';
 import { View, Text, TouchableOpacity, Image, StyleSheet } from 'react-native';
 import myImg from '../icons/delete.png';
 
-const ListTitle = ({ title, onDelete }) => (
+interface ListTitleProps {
+  title: string;
+  onDelete: () => void;
+}
+
+const ListTitle: React.FC<ListTitleProps> = ({ title, onDelete }) => (
   <View style={styles.container}>
     <Text style={styles.title}>{title}</Text>
     <TouchableOpacity onPress={onDelete} style={styles.deleteButton}>

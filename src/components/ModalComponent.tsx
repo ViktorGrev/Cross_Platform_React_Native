@@ -1,7 +1,15 @@
 import React from 'react';
 import { Modal, View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
 
-const ModalComponent = ({ isVisible, onClose, newListName, setNewListName, onCreateList }) => (
+interface ModalComponentProps {
+  isVisible: boolean;
+  onClose: () => void;
+  newListName: string;
+  setNewListName: (name: string) => void;
+  onCreateList: () => void;
+}
+
+const ModalComponent: React.FC<ModalComponentProps> = ({ isVisible, onClose, newListName, setNewListName, onCreateList }) => (
   <Modal visible={isVisible} transparent={true} animationType="slide">
     <View style={styles.modalContainer}>
       <View style={styles.modalContent}>
